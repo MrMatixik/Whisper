@@ -53,10 +53,22 @@ python3 run_server.py -p 9090 \
                       -trt /home/TensorRT-LLM/examples/whisper/whisper_small \
                       -m
 ```
-
+#### Controlling OpenMP Threads
+To control the number of threads used by OpenMP, you can set the `OMP_NUM_THREADS` environment variable. This is useful for managing CPU resources and ensuring consistent performance. If not specified, `OMP_NUM_THREADS` is set to `1` by default. You can change this by using the `--omp_num_threads` argument:
+```bash
+python3 run_server.py --port 9090 \
+                      --backend faster_whisper \
+                      --omp_num_threads 4
+```
 
 ### Running the Client
-- Initializing the client:
+- Initializing the client with below parameters:
+  - `lang`: Language of the input audio, applicable only if using a multilingual model.
+  - `translate`: If set to `True` then translate from any language to `en`.
+  - `model`: Whisper model size.
+  - `use_vad`: Whether to use `Voice Activity Detecion` on the server.
+  - `save_output_recording`: Set to True to save the microphone input as a `.wav` file during live transcription. This option is helpful for recording sessions for later playback or analysis. Defaults to `False`. 
+  - `output_recording_filename`: Specifies the `.wav` file path where the microphone input will be saved if `save_output_recording` is set to `True`.
 ```python
 from whisper_live.client import TranscriptionClient
 client = TranscriptionClient(
@@ -66,11 +78,13 @@ client = TranscriptionClient(
   translate=False,
   model="small",
   use_vad=False,
+  save_output_recording=True,                         # Only used for microphone input, False by Default
+  output_recording_filename="./output_recording.wav"  # Only used for microphone input
 )
 ```
 It connects to the server running on localhost at port 9090. Using a multilingual model, language for the transcription will be automatically detected. You can also use the language option to specify the target language for the transcription, in this case, English ("en"). The translate option should be set to `True` if we want to translate from the source language to English and `False` if we want to transcribe in the source language.
 
-- Trancribe an audio file:
+- Transcribe an audio file:
 ```python
 client("tests/jfk.wav")
 ```
@@ -80,9 +94,14 @@ client("tests/jfk.wav")
 client()
 ```
 
+- To transcribe from a RTSP stream:
+```python
+client(rtsp_url="rtsp://admin:admin@192.168.0.1/rtsp")
+```
+
 - To transcribe from a HLS stream:
 ```python
-client(hls_url="http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_1xtra/bbc_1xtra.isml/bbc_1xtra-audio%3d96000.norewind.m3u8") 
+client(hls_url="http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_1xtra/bbc_1xtra.isml/bbc_1xtra-audio%3d96000.norewind.m3u8")
 ```
 
 ## Browser Extensions
